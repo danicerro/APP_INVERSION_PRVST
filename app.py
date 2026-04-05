@@ -115,7 +115,7 @@ with col3:
     n_prospects = st.number_input(
         "Maximum number of prospects:", 
         min_value=1, 
-        max_value=50, 
+        max_value=100, 
         value=5, 
         step=1,
         help="Note: Output may be smaller as prospects failing physical constraints are discarded."
@@ -145,7 +145,7 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
         # Esta función será llamada por el backend en cada ciclo
         def update_progress(current_step, total_steps):
             percent = int((current_step / total_steps) * 100)
-            my_bar.progress(percent, text=f"Generating prospect {current_step} of {total_steps}... Please wait.")
+            my_bar.progress(percent, text=f"Generating prospect {current_step} of {total_steps}...")
 
         try:
             # Call to optimized backend, passing the callback function
