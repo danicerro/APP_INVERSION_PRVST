@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import joblib
 import pandas as pd
-import time  # Importante para la animación de la barra de progreso
+import time
 
 # Import the main function from your backend script
 from Inversion_experimental_app import generate_perovskite_samples
@@ -83,7 +83,6 @@ with st.expander("📖 Instructions and Input Format", expanded=True):
             'Ni', 'O', 'PA', 'PDA', 'PF6', 'PN', 'PR', 'Pb', 'Rb', 'S', 'Sb', 'Sm',
             'Sn', 'Sr', 'TN', 'Tb', 'Ti', 'Y', 'Zn'
         ]
-        # Joining the list into a single paragraph to save space
         st.write(", ".join(allowed_ions))
 
 st.divider()
@@ -140,17 +139,16 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
             [0.01, 10]     # 'area_measured'
         ]
         
-        # --- PROGRESS BAR IMPLEMENTATION ---
-        progress_text = "Generating prospects... Please wait."
-        my_bar = st.progress(0, text=progress_text)
+        # --- PROGRESS BAR IMPLEMENTATION (REAL TIME) ---
+        my_bar = st.progress(0, text="Initializing optimization sequence...")
         
-        # Simulate initial loading while preparing models
-        for percent_complete in range(80):
-            time.sleep(0.01)
-            my_bar.progress(percent_complete + 1, text=progress_text)
-            
+        # Esta función será llamada por el backend en cada ciclo
+        def update_progress(current_step, total_steps):
+            percent = int((current_step / total_steps) * 100)
+            my_bar.progress(percent, text=f"Generating prospect {current_step} of {total_steps}... Please wait.")
+
         try:
-            # Call to optimized backend
+            # Call to optimized backend, passing the callback function
             resultados_df = generate_perovskite_samples(
                 material_expression=[material_str], 
                 target_pce=np.array([target_pce_val]), 
@@ -158,13 +156,13 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
                 input_bounds=input_bounds,
                 loaded_regressor=regressor, 
                 gen_model=generator, 
-                lle_cos=lle_model
+                lle_cos=lle_model,
+                progress_callback=update_progress  # <--- SE PASA EL CALLBACK AQUÍ
             )
             
-            # Finish progress bar
             my_bar.progress(100, text="Optimization complete!")
-            time.sleep(0.5) # Pause briefly so the user sees 100%
-            my_bar.empty()  # Remove the progress bar to clean the UI
+            time.sleep(0.5)
+            my_bar.empty()
             
             if resultados_df.empty:
                 st.warning("The optimization could not converge on valid prospects for these parameters.")
@@ -173,22 +171,18 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
                 
                 st.markdown("### Suggested Experimental Parameters")
                 
-                # Clone dataframe and drop LLE columns to hide them from the user
                 df_display = resultados_df.copy()
                 cols_to_drop = ['LLE-1', 'LLE-2', 'LLE-3', 'LLE-4']
                 df_display = df_display.drop(columns=[col for col in cols_to_drop if col in df_display.columns])
                 
-                # Round to 3 decimal places for cleaner visualization
                 df_display = df_display.round(3)
                 
-                # Display the cleaned dataframe
                 st.dataframe(
                     df_display, 
                     use_container_width=True,
                     hide_index=True
                 )
                 
-                # Variables glossary directly under the dataframe
                 with st.expander("📊 Variables Glossary"):
                     st.markdown("""
                     * **`DMF-DMSO-ratio`**: $\chi_{sol}$, DMSO:DMF ratio expressed in logarithmic scale. DMSO and DMF (along with other solvents reported in the Perovskite Project Database) are used in the deposition of the perovskite layer.
@@ -200,7 +194,6 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
                     * **`Abs_Error`**: Absolute error of the predicted PCE with respect to the desired target value.
                     """)
                 
-                # Option to download results (without LLE columns)
                 csv = df_display.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     "📥 Download Prospects (CSV)",
@@ -211,11 +204,11 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
                 )
                 
         except Exception as e:
-            my_bar.empty() # Clear bar on error
+            my_bar.empty() 
             st.error(f"Error during the inversion process: {str(e)}")
 
 # --- FOOTER ---
-st.markdown("<br><br><br>", unsafe_allow_html=True) # Adds some breathing room at the bottom
+st.markdown("<br><br><br>", unsafe_allow_html=True) 
 st.divider()
 
 st.markdown("""
