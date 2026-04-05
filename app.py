@@ -193,7 +193,7 @@ st.markdown("""
 
 <div style="text-align: right; font-size: 0.85em; color: #888888;">
     <b>Authors & Contact:</b><br>
-    <a href="https://orcid.org/0000-0002-9643-5193" target="_blank" style="color: #888888; text-decoration: none;">F. Alexander Sepúlveda</a> | ✉️ <a href="mailto:franklin@e3t.uis.edu.co" style="color: #888888; text-decoration: none;">franklin@e3t.uis.edu.co</a><br>
-    <a href="https://orcid.org/0009-0009-0654-4520" target="_blank" style="color: #888888; text-decoration: none;">Daniel Cerro-Ramos</a> | ✉️ <a href="mailto:daniel2258050@correo.uis.edu.co" style="color: #888888; text-decoration: none;">daniel2258050@correo.uis.edu.co</a>
+    <a href="https://orcid.org/0000-0002-9643-5193" target="_blank" style="color: #888888; text-decoration: none;">F. Alexander Sepúlveda</a> | <a href="mailto:franklin@e3t.uis.edu.co" style="color: #888888; text-decoration: none;">franklin@e3t.uis.edu.co</a><br>
+    <a href="https://orcid.org/0009-0009-0654-4520" target="_blank" style="color: #888888; text-decoration: none;">Daniel Cerro-Ramos</a> | <a href="mailto:daniel2258050@correo.uis.edu.co" style="color: #888888; text-decoration: none;">daniel2258050@correo.uis.edu.co</a>
 </div>
 """, unsafe_allow_html=True)
