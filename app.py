@@ -39,7 +39,7 @@ with st.expander("📖 Instructions and Input Format", expanded=True):
     2. **Target PCE (%):** Your desired Power Conversion Efficiency.
     3. **Prospects:** The maximum number of experimental conditions to generate.
     
-    **Format rule for Perovskite Type:** You must write the symbol of the ion or molecule followed by its stoichiometric coefficient (without leaving spaces). 
+    **Format rule for Perovskite Type:** You must write the symbol of the element or molecule followed by its stoichiometric coefficient (without leaving spaces). 
     
     You can construct any type of perovskite as long as you use the basic elements and molecules supported by the model.
     
@@ -52,7 +52,7 @@ with st.expander("📖 Instructions and Input Format", expanded=True):
     """)
     
     # Hidden list of allowed elements
-    with st.expander("🔍 View supported elements and molecules (ION_LIST)"):
+    with st.expander("🔍 View supported elements and molecules"):
         allowed_ions = [
             '((CH3)3S)', '(1.3-Pr(NH3)2)', '(3AMP)', '(3AMPY)', '(4AMP)', '(4AMPY)', '(4ApyH)',
             '(4FPEA)', '(5-AVA)', '(5-AVAI)', '(6-ACA)', '(ALA)', '(APMim)', '(AVA)', '(Ace)',
@@ -83,7 +83,8 @@ with col1:
     material_str = st.text_input(
         "Enter the formula:", 
         value="MA1Pb1I3",
-        placeholder="e.g., Cs0.05FA0.66MA0.29PbBr0.45I2.55"
+        placeholder="e.g., Cs0.05FA0.66MA0.29PbBr0.45I2.55",
+        help="Format: Element or molecule symbol followed by its coefficient (no spaces)."
     )
 
 with col2:
@@ -99,14 +100,13 @@ with col2:
 
 with col3:
     st.subheader("3. Prospects")
-    # Using tooltip (help) for the discreet message about constraints
     n_prospects = st.number_input(
         "Maximum number of prospects:", 
         min_value=1, 
         max_value=50, 
         value=5, 
         step=1,
-        help="Note: The actual output size may be smaller due to the elimination of generated prospects that fail to meet expert/physics-informed constraints."
+        help="Note: Output may be smaller as prospects failing physical constraints are discarded."
     )
 
 st.divider()
@@ -193,7 +193,7 @@ st.markdown("""
 
 <div style="text-align: right; font-size: 0.85em; color: #888888;">
     <b>Authors & Contact:</b><br>
-    <a href="https://orcid.org/0000-0002-9643-5193" target="_blank" style="color: #888888; text-decoration: none;">F. Alexander Sepúlveda</a> | <a href="mailto:franklin@e3t.uis.edu.co" style="color: #888888; text-decoration: none;">franklin@e3t.uis.edu.co</a><br>
-    <a href="https://orcid.org/0009-0009-0654-4520" target="_blank" style="color: #888888; text-decoration: none;">Daniel Cerro-Ramos</a> | <a href="mailto:daniel2258050@correo.uis.edu.co" style="color: #888888; text-decoration: none;">daniel2258050@correo.uis.edu.co</a>
+    <a href="https://orcid.org/0000-0002-9643-5193" target="_blank" style="color: #888888; text-decoration: none;">F. Alexander Sepúlveda</a> | ✉️ <a href="mailto:franklin@e3t.uis.edu.co" style="color: #888888; text-decoration: none;">franklin@e3t.uis.edu.co</a><br>
+    <a href="https://orcid.org/0009-0009-0654-4520" target="_blank" style="color: #888888; text-decoration: none;">Daniel Cerro-Ramos</a> | ✉️ <a href="mailto:daniel2258050@correo.uis.edu.co" style="color: #888888; text-decoration: none;">daniel2258050@correo.uis.edu.co</a>
 </div>
 """, unsafe_allow_html=True)
