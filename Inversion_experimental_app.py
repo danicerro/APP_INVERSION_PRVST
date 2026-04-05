@@ -268,7 +268,8 @@ def verify_inferred_inputs(loaded_regressor, material, optimal_synthesis_inputs)
 
 # --- FUNCIÓN PRINCIPAL OPTIMIZADA ---
 # OPTIMIZACIÓN: Ahora recibe los modelos pre-cargados como argumentos
-def generate_perovskite_samples(material_expression, target_pce, n_prospects, input_bounds, loaded_regressor, gen_model, lle_cos):
+# the main function.
+def generate_perovskite_samples(material_expression, target_pce, n_prospects, input_bounds, loaded_regressor, gen_model, lle_cos, progress_callback=None): # <-- NUEVO: progress_callback
     vectores = []
     for mat in material_expression:  
         parsed_result = parse_with_ion_list_refined(mat, ION_LIST)
@@ -285,7 +286,6 @@ def generate_perovskite_samples(material_expression, target_pce, n_prospects, in
 
     rows = []
     for pp in range(0, n_prospects):
-        # Pasamos los modelos ya cargados
         opt_input = inferre_exp_conditions(loaded_regressor, gen_model, target_pce[0], material, input_bounds)
         if opt_input:
             pred_pce = verify_inferred_inputs(loaded_regressor, material, opt_input) 
@@ -293,9 +293,14 @@ def generate_perovskite_samples(material_expression, target_pce, n_prospects, in
             flat_input = np.ravel(opt_input).tolist()
             combined_row = flat_input + [pce_val]
             rows.append(combined_row)
+            
+        # --- NUEVO: Actualizar la barra de progreso ---
+        if progress_callback is not None:
+            progress_callback(pp + 1, n_prospects)
+        # ----------------------------------------------
 
     if not rows:
-        return pd.DataFrame() # Retorna df vacío si no hay resultados
+        return pd.DataFrame() 
 
     var_names = ['LLE-1', 'LLE-2', 'LLE-3', 'LLE-4', 'DMF-DMSO-ratio', 'ann-thermal-budget', 'band-gap', '1st-ann-temperature', 'area_measured', 'PCE']
     df_prospects = pd.DataFrame(rows, columns=var_names)
