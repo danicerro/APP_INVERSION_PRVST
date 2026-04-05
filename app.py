@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import joblib
 import pandas as pd
+import time  # Importante para la animación de la barra de progreso
 
 # Import the main function from your backend script
 from Inversion_experimental_app import generate_perovskite_samples
@@ -12,6 +13,18 @@ st.set_page_config(
     page_icon="☀️",
     layout="wide"
 )
+
+# --- HIDE THE RUNNING MAN ANIMATION ---
+hide_running_man_style = """
+<style>
+div[data-testid="stStatusWidget"] {
+    visibility: hidden;
+    height: 0%;
+    position: fixed;
+}
+</style>
+"""
+st.markdown(hide_running_man_style, unsafe_allow_html=True)
 
 # --- CACHE MODELS ---
 @st.cache_resource
@@ -118,71 +131,88 @@ if st.button("Generate Synthesis Prospects", type="primary", use_container_width
     elif not material_str.strip():
         st.warning("Please enter a material formula.")
     else:
-        with st.spinner('Generating...'):
-            # Synthesis bounds
-            input_bounds = [                                           
-                [0.01, 5.0],   # 'DMF-DMSO-ratio'
-                [1.0, 7.0],    # 'ann-thermal-budget'
-                [1.1, 2.2],    # 'band-gap'
-                [50, 300],     # '1st-ann-temperature'
-                [0.01, 10]     # 'area_measured'
-            ]
+        # Synthesis bounds
+        input_bounds = [                                           
+            [0.01, 5.0],   # 'DMF-DMSO-ratio'
+            [1.0, 7.0],    # 'ann-thermal-budget'
+            [1.1, 2.2],    # 'band-gap'
+            [50, 300],     # '1st-ann-temperature'
+            [0.01, 10]     # 'area_measured'
+        ]
+        
+        # --- PROGRESS BAR IMPLEMENTATION ---
+        progress_text = "Generating prospects... Please wait."
+        my_bar = st.progress(0, text=progress_text)
+        
+        # Simulate initial loading while preparing models
+        for percent_complete in range(80):
+            time.sleep(0.01)
+            my_bar.progress(percent_complete + 1, text=progress_text)
             
-            try:
-                # Call to optimized backend
-                resultados_df = generate_perovskite_samples(
-                    material_expression=[material_str], 
-                    target_pce=np.array([target_pce_val]), 
-                    n_prospects=n_prospects, 
-                    input_bounds=input_bounds,
-                    loaded_regressor=regressor, 
-                    gen_model=generator, 
-                    lle_cos=lle_model
+        try:
+            # Call to optimized backend
+            resultados_df = generate_perovskite_samples(
+                material_expression=[material_str], 
+                target_pce=np.array([target_pce_val]), 
+                n_prospects=n_prospects, 
+                input_bounds=input_bounds,
+                loaded_regressor=regressor, 
+                gen_model=generator, 
+                lle_cos=lle_model
+            )
+            
+            # Finish progress bar
+            my_bar.progress(100, text="Optimization complete!")
+            time.sleep(0.5) # Pause briefly so the user sees 100%
+            my_bar.empty()  # Remove the progress bar to clean the UI
+            
+            if resultados_df.empty:
+                st.warning("The optimization could not converge on valid prospects for these parameters.")
+            else:
+                st.success(f"Results generated for {material_str}!")
+                
+                st.markdown("### Suggested Experimental Parameters")
+                
+                # Clone dataframe and drop LLE columns to hide them from the user
+                df_display = resultados_df.copy()
+                cols_to_drop = ['LLE-1', 'LLE-2', 'LLE-3', 'LLE-4']
+                df_display = df_display.drop(columns=[col for col in cols_to_drop if col in df_display.columns])
+                
+                # Round to 3 decimal places for cleaner visualization
+                df_display = df_display.round(3)
+                
+                # Display the cleaned dataframe
+                st.dataframe(
+                    df_display, 
+                    use_container_width=True,
+                    hide_index=True
                 )
                 
-                if resultados_df.empty:
-                    st.warning("The optimization could not converge on valid prospects for these parameters.")
-                else:
-                    st.success(f"Results generated for {material_str}!")
-                    
-                    st.markdown("### Suggested Experimental Parameters")
-                    
-                    # Clone dataframe and drop LLE columns to hide them from the user
-                    df_display = resultados_df.copy()
-                    cols_to_drop = ['LLE-1', 'LLE-2', 'LLE-3', 'LLE-4']
-                    df_display = df_display.drop(columns=[col for col in cols_to_drop if col in df_display.columns])
-                    
-                    # Display the cleaned dataframe
-                    st.dataframe(
-                        df_display, 
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                    
-                    # Variables glossary directly under the dataframe
-                    with st.expander("📊 Variables Glossary"):
-                        st.markdown("""
-                        * **`DMF-DMSO-ratio`**: $\chi_{sol}$, DMSO:DMF ratio expressed in logarithmic scale. DMSO and DMF (along with other solvents reported in the Perovskite Project Database) are used in the deposition of the perovskite layer.
-                        * **`1st-ann-temperature`**: First temperature during the thermal annealing process.
-                        * **`ann-thermal-budget`**: Thermal budget.
-                        * **`band-gap`**: Perovskite band gap.
-                        * **`area_measured`**: Cell area measured.
-                        * **`PCE`**: Power Conversion Efficiency.
-                        * **`Abs_Error`**: Absolute error of the predicted PCE with respect to the desired target value.
-                        """)
-                    
-                    # Option to download results (without LLE columns)
-                    csv = df_display.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        "📥 Download Prospects (CSV)",
-                        csv,
-                        f"prospects_{material_str}.csv",
-                        "text/csv",
-                        key='download-csv'
-                    )
-                    
-            except Exception as e:
-                st.error(f"Error during the inversion process: {str(e)}")
+                # Variables glossary directly under the dataframe
+                with st.expander("📊 Variables Glossary"):
+                    st.markdown("""
+                    * **`DMF-DMSO-ratio`**: $\chi_{sol}$, DMSO:DMF ratio expressed in logarithmic scale. DMSO and DMF (along with other solvents reported in the Perovskite Project Database) are used in the deposition of the perovskite layer.
+                    * **`1st-ann-temperature`**: First temperature during the thermal annealing process.
+                    * **`ann-thermal-budget`**: Thermal budget.
+                    * **`band-gap`**: Perovskite band gap.
+                    * **`area_measured`**: Cell area measured.
+                    * **`PCE`**: Power Conversion Efficiency.
+                    * **`Abs_Error`**: Absolute error of the predicted PCE with respect to the desired target value.
+                    """)
+                
+                # Option to download results (without LLE columns)
+                csv = df_display.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    "📥 Download Prospects (CSV)",
+                    csv,
+                    f"prospects_{material_str}.csv",
+                    "text/csv",
+                    key='download-csv'
+                )
+                
+        except Exception as e:
+            my_bar.empty() # Clear bar on error
+            st.error(f"Error during the inversion process: {str(e)}")
 
 # --- FOOTER ---
 st.markdown("<br><br><br>", unsafe_allow_html=True) # Adds some breathing room at the bottom
